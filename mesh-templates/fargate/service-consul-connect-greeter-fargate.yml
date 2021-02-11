@@ -83,10 +83,6 @@ Resources:
             - '-c'
           Command:
             #- export MY_IPV4=$(curl $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPV4Addresses[0]')
-            - echo "printing metadata URI..."
-            - echo $ECS_CONTAINER_METADATA_URI
-            - echo "printing result of metadata query..."
-            - echo $(curl $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPV4Addresses[0]')
             - !Sub >
                 exec consul agent -ui
                 -data-dir /consul/data
