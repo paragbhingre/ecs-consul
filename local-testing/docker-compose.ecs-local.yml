@@ -1,0 +1,91 @@
+version: "3.4"
+services:
+  consul-agent:
+    command:
+    - exec consul agent -ui -data-dir /consul/data -advertise $$(curl $$ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPV4Addresses[0]') -client 0.0.0.0 -node $$(curl $$ECS_CONTAINER_METADATA_URI | jq '.TaskARN') -retry-join "provider=aws tag_key=Name tag_value=consulprod-consul-server"
+    entrypoint:
+    - /bin/sh
+    - -c
+    environment:
+      AWS_CONTAINER_CREDENTIALS_RELATIVE_URI: /creds
+      CONSUL_LOCAL_CONFIG: '{"connect":{"enabled":true}}'
+      ECS_CONTAINER_METADATA_URI: http://169.254.170.2/v3
+    image: consul:1.9.3
+    labels:
+      ecs-local.task-definition-input.type: remote
+      ecs-local.task-definition-input.value: greeter-fargate:8
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: consulprod-daemon-consul-agent
+        awslogs-region: us-west-1
+        awslogs-stream-prefix: consul-agent-fargate
+    networks:
+      ecs-local-network: null
+    ports:
+    - target: 8301
+      published: 8301
+      protocol: tcp
+    - target: 8301
+      published: 8301
+      protocol: udp
+    - target: 8400
+      published: 8400
+      protocol: tcp
+    - target: 8500
+      published: 8500
+      protocol: tcp
+    - target: 53
+      published: 53
+      protocol: udp
+    volumes:
+    - type: bind
+      target: /consul/data
+      source: C:\Users\stankoa\Documents\_HashiCorp\consul-data # for real, uses named volume "consul-data"
+  greeter-fargate:
+    environment:
+      AWS_CONTAINER_CREDENTIALS_RELATIVE_URI: /creds
+      ECS_CONTAINER_METADATA_URI: http://169.254.170.2/v3
+      GREETING_URL: http://localhost:3002
+      NAME_URL: http://localhost:3001
+      PORT: "3000"
+    image: nathanpeck/greeter
+    labels:
+      ecs-local.task-definition-input.type: remote
+      ecs-local.task-definition-input.value: greeter-fargate:8
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: consulprod-service-greeter-fargate
+        awslogs-region: us-west-1
+        awslogs-stream-prefix: greeter-fargate
+    networks:
+      ecs-local-network: null
+  greeter-fargate-proxy:
+    command:
+    - exec consul connect proxy -register -service greeter-fargate -register-id $$(curl $$ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPV4Addresses[0]') -http-addr $$(curl $$ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPV4Addresses[0]'):8500 -listen $$(curl $$ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPV4Addresses[0]'):8080 -service-addr $$(curl $$ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPV4Addresses[0]'):3000 -upstream name:3001 -upstream greeting:3002
+    entrypoint:
+    - /bin/sh
+    - -c
+    environment:
+      AWS_CONTAINER_CREDENTIALS_RELATIVE_URI: /creds
+      ECS_CONTAINER_METADATA_URI: http://169.254.170.2/v3
+    image: consul:1.9.3
+    labels:
+      ecs-local.task-definition-input.type: remote
+      ecs-local.task-definition-input.value: greeter-fargate:8
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: consulprod-service-greeter-fargate
+        awslogs-region: us-west-1
+        awslogs-stream-prefix: consul-connect-fargate
+    networks:
+      ecs-local-network: null
+    ports:
+    - target: 8080
+      published: 8080
+      protocol: tcp
+networks:
+  ecs-local-network:
+    external: true

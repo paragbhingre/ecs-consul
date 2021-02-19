@@ -1,0 +1,11 @@
+version: "3.4"
+services:
+  consul-agent:
+    logging:
+      driver: json-file
+  greeter-fargate:
+    logging:
+      driver: json-file
+  greeter-fargate-proxy:
+    logging:
+      driver: json-file
