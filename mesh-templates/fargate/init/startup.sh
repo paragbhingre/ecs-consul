@@ -5,6 +5,7 @@ echo "discovered IPv4 address is: " $ECS_IPV4
 
 ENV_NAME="consulprod"
 CONSUL_DIR="/consul/config"
+UUID=$(curl -s $ECS_CONTAINER_METADATA_URI | jq '.Labels["com.amazonaws.ecs.task-arn"]')
 
 echo "writing service file..."
 echo '{
@@ -20,7 +21,7 @@ echo '{
 
 echo "writing config file..."
 echo '{
-    "node_name": "counting-client-1",
+    "node_name": '$UUID',
     "client_addr": "0.0.0.0",
     "data_dir": "/consul/data",
     "retry_join": ["10.0.0.17","10.0.1.26","10.0.1.46"],
