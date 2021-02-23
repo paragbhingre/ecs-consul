@@ -1,0 +1,149 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy an ECS service with a Consul Connect sidecar
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: consulprod
+    Description: The name of the environment to add this service to
+  ServiceName:
+    Type: String
+    Default: counting-fargate # custom service name
+    Description: A name for the service
+  ImageUrl:
+    Type: String
+    Default: hashicorp/counting-service:0.0.2  # counting image
+    Description: The url of a counting image that contains the application process that
+                 will handle the traffic for this service
+  
+  InitImageUrl:
+    Type: String
+    Default: 679273379347.dkr.ecr.us-west-1.amazonaws.com/allietest:latest
+    Description: The custom build image which will create the config files
+  
+  DesiredCount:
+    Type: Number
+    Default: 1
+    Description: How many copies of the service task to run
+  Role:
+    Type: String
+    Default: "ConsulMeshStack-ConsulAgentRole-GF07U0QPJV53" # AS: get dynamically instead
+    Description: (Optional) An IAM role to give the service's containers if the code within needs to
+                 access other AWS resources like S3 buckets, DynamoDB tables, etc
+
+Conditions:
+  HasCustomRole: !Not [ !Equals [!Ref 'Role', ''] ]
+
+Resources:
+  # A log group for storing the stdout logs from this service's containers
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub ${EnvironmentName}-init-test
+
+  TaskDefinition:
+      Type: AWS::ECS::TaskDefinition
+      Properties:
+        Family: !Ref 'ServiceName'
+        NetworkMode: awsvpc
+        Cpu: 512
+        Memory: 1024
+        ExecutionRoleArn: ecsTaskExecutionRole
+        TaskRoleArn: ConsulMeshStack-ConsulAgentRole-GF07U0QPJV53
+        RequiresCompatibilities:
+          - FARGATE
+        Volumes:
+          - Name: consul-data
+          - Name: consul-config
+        ContainerDefinitions:
+          
+          # the init container which populates the config files
+          - Name: config-init
+            Image: !Ref 'InitImageUrl'
+            Essential: false
+            MountPoints:
+              - SourceVolume: consul-config
+                ContainerPath: /consul/config
+            LogConfiguration:
+              LogDriver: 'awslogs'
+              Options:
+                awslogs-group: !Sub ${EnvironmentName}-init-test
+                awslogs-region: !Ref 'AWS::Region'
+                awslogs-stream-prefix: 'init-test'
+
+
+          # the service that will count (no purpose yet)
+          - Name: counter-service
+            Image: !Ref 'ImageUrl'
+            PortMappings:
+              - ContainerPort: 9001
+            LogConfiguration:
+              LogDriver: 'awslogs'
+              Options:
+                awslogs-group: !Sub ${EnvironmentName}-init-test
+                awslogs-region: !Ref 'AWS::Region'
+                awslogs-stream-prefix: 'counting-service'
+
+          # the agent which should register the service
+          - Name: consul-agent
+            DependsOn:
+              - ContainerName: config-init
+                Condition: COMPLETE
+            Image: 'consul:1.9.3'
+            EntryPoint:
+              - '/bin/sh'
+              - '-c'
+            Command:
+              - !Sub >
+                  exec consul agent -ui -config-dir /consul/config
+            PortMappings:
+              - ContainerPort: 8301
+                Protocol: tcp
+              - ContainerPort: 8301
+                Protocol: udp
+              - ContainerPort: 8400
+                Protocol: tcp
+              - ContainerPort: 8500
+                Protocol: tcp
+              - ContainerPort: 53
+                Protocol: udp
+            #Essential: true
+            #Environment:
+              # A few extra config values for the Consul agent, this enables the
+              # Consul Connect features.
+              #- Name: CONSUL_LOCAL_CONFIG
+                #Value: '{"connect":{"enabled":true}}'
+            MountPoints:
+              - ContainerPath: /consul/data
+                SourceVolume: consul-data
+                ReadOnly: false
+              - ContainerPath: /consul/config
+                SourceVolume: consul-config
+                ReadOnly: false
+            LogConfiguration:
+              LogDriver: 'awslogs'
+              Options:
+                awslogs-group: !Sub ${EnvironmentName}-init-test
+                awslogs-region: !Ref 'AWS::Region'
+                awslogs-stream-prefix: 'consul-agent'
+
+  # The service to run the containers
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Ref 'ServiceName'
+      LaunchType: 'FARGATE' # task def needs task mem/CPU, maybe require capabilities?
+      Cluster:
+        Fn::ImportValue: !Sub ${EnvironmentName}:ClusterName
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 75
+      DesiredCount: !Ref 'DesiredCount'
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - Fn::ImportValue: !Sub ${EnvironmentName}:ServiceSecurityGroup
+          Subnets:
+            - Fn::ImportValue: !Sub ${EnvironmentName}:PublicSubnetOne
+            - Fn::ImportValue: !Sub ${EnvironmentName}:PublicSubnetTwo
+      TaskDefinition: !Ref 'TaskDefinition'
