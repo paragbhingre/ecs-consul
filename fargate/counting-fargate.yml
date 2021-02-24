@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Deploy an ECS service with a Consul Connect sidecar
+Description: Deploy an ECS service with a Consul client and sidecar
 Parameters:
   EnvironmentName:
     Type: String
@@ -26,12 +26,9 @@ Parameters:
     Description: How many copies of the service task to run
   Role:
     Type: String
-    Default: "ConsulMeshStack-ConsulAgentRole-GF07U0QPJV53" # AS: get dynamically instead
+    Default: "ConsulMeshStack-ConsulAgentRole-GF07U0QPJV53" # TODO: get dynamically instead
     Description: (Optional) An IAM role to give the service's containers if the code within needs to
                  access other AWS resources like S3 buckets, DynamoDB tables, etc
-
-Conditions:
-  HasCustomRole: !Not [ !Equals [!Ref 'Role', ''] ]
 
 Resources:
   # A log group for storing the stdout logs from this service's containers
@@ -70,8 +67,7 @@ Resources:
                 awslogs-region: !Ref 'AWS::Region'
                 awslogs-stream-prefix: 'init-test'
 
-
-          # the service that will count (no purpose yet)
+          # the service that will count (no real purpose yet)
           - Name: counter-service
             Image: !Ref 'ImageUrl'
             PortMappings:
@@ -83,7 +79,7 @@ Resources:
                 awslogs-region: !Ref 'AWS::Region'
                 awslogs-stream-prefix: 'counting-service'
 
-          # the agent which should register the service
+          # the agent which should join the mesh & register the service
           - Name: consul-agent
             DependsOn:
               - ContainerName: config-init
@@ -126,12 +122,12 @@ Resources:
                 awslogs-region: !Ref 'AWS::Region'
                 awslogs-stream-prefix: 'consul-agent'
 
-  # The service to run the containers
+  # The ECS service to run the containers
   Service:
     Type: AWS::ECS::Service
     Properties:
       ServiceName: !Ref 'ServiceName'
-      LaunchType: 'FARGATE' # task def needs task mem/CPU, maybe require capabilities?
+      LaunchType: 'FARGATE'
       Cluster:
         Fn::ImportValue: !Sub ${EnvironmentName}:ClusterName
       DeploymentConfiguration:
