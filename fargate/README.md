@@ -30,4 +30,4 @@ Consul nodes should appear as the names of the tasks they're running on:
 
 
 ## Other caveats
-* `amazonlinux` base image for `config-init` is very much overkill (slimmer linux image w/ `curl` should work too)
+* `amazonlinux` base image for `config-init` is very much overkill (slimmer linux image w/ `curl` and `bash` should work too)
