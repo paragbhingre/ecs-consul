@@ -1,3 +1,6 @@
+# WORK IN PROGRESS
+# 2/24/21: service starts, but agent dies b/c too many IPv4 addresses.
+# Needs more durable config setting.
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Deploy an ECS service with a Consul Connect sidecar
 Parameters:
@@ -82,14 +85,13 @@ Resources:
             - '/bin/sh'
             - '-c'
           Command:
-            #- export MY_IPV4=$(curl $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPV4Addresses[0]')
+            #- export MY_IPV4=$(curl $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPv4Addresses[0]')
             - !Sub >
                 exec consul agent -ui
                 -data-dir /consul/data
-                -advertise $(curl $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPV4Addresses[0]')
                 -client 0.0.0.0
-                -node $(curl $ECS_CONTAINER_METADATA_URI | jq '.TaskARN')
                 -retry-join "provider=aws tag_key=Name tag_value=${EnvironmentName}-consul-server"
+                -advertise $(curl -s $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPv4Addresses[0]')
           Memory: 128
           PortMappings:
             - ContainerPort: 8301
@@ -137,15 +139,15 @@ Resources:
           PortMappings:
             - ContainerPort: 8080
           Command:
-            #- export MY_IPV4=$(curl $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPV4Addresses[0]')
+            #- export MY_IPV4=$(curl $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPv4Addresses[0]')
             - !Sub >
               exec consul connect proxy
               -register
               -service ${ServiceName}
-              -register-id $(curl $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPV4Addresses[0]')
-              -http-addr $(curl $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPV4Addresses[0]'):8500
-              -listen $(curl $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPV4Addresses[0]'):8080
-              -service-addr $(curl $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPV4Addresses[0]'):${ContainerPort}
+              -register-id $(curl http://169.254.170.2/v3 | jq '.Networks[0].IPv4Addresses[0]')
+              -http-addr $(curl http://169.254.170.2/v3 | jq '.Networks[0].IPv4Addresses[0]'):8500
+              -listen $(curl http://169.254.170.2/v3 | jq '.Networks[0].IPv4Addresses[0]'):8080
+              -service-addr $(curl http://169.254.170.2/v3 | jq '.Networks[0].IPv4Addresses[0]'):${ContainerPort}
               -upstream name:3001
               -upstream greeting:3002
           Essential: true
