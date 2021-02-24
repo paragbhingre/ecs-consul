@@ -18,9 +18,7 @@ On task launch:
 
 Consul nodes should appear as the names of the tasks they're running on:
 
-![node](../../images/fargate_node.PNG)
-
-
+![node](../images/fargate_node.PNG)
 
 
 ## What it does NOT do (yet)
