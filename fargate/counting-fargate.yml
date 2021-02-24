@@ -22,7 +22,7 @@ Parameters:
   
   DesiredCount:
     Type: Number
-    Default: 1
+    Default: 2
     Description: How many copies of the service task to run
   Role:
     Type: String
@@ -121,6 +121,27 @@ Resources:
                 awslogs-group: !Sub ${EnvironmentName}-init-test
                 awslogs-region: !Ref 'AWS::Region'
                 awslogs-stream-prefix: 'consul-agent'
+
+          # the Consul Connect sidecar proxy
+          - Name: consul-proxy
+            Image: 'consul:1.9.3'
+            EntryPoint:
+              - '/bin/sh'
+              - '-c'
+            DependsOn:
+              - ContainerName: consul-agent
+                Condition: START
+            Command:
+              - !Sub >
+                  exec consul connect proxy -sidecar-for counting
+            PortMappings:
+              - ContainerPort: 8080
+            LogConfiguration:
+              LogDriver: 'awslogs'
+              Options:
+                awslogs-group: !Sub ${EnvironmentName}-init-test
+                awslogs-region: !Ref 'AWS::Region'
+                awslogs-stream-prefix: 'consul-proxy'
 
   # The ECS service to run the containers
   Service:

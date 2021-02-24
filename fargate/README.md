@@ -14,20 +14,22 @@ On task launch:
     * _service-counting.json_ : service definition for `counter-service` + its sidecar proxy
 3. `consul-agent` starts after `config-init` completes, then:
     * attempts to join the list of agents provided in _config.json_ (will retry)
-    * registers `counter-service` with the mesh 
+    * registers `counter-service` with the mesh
+4. `consul-proxy` starts after `consul-agent` and registers itself as the sidecar for the _**counting**_ service.
 
 Consul nodes should appear as the names of the tasks they're running on:
 
-![node](../images/fargate_node.PNG)
+![node](../images/fargate_node_detail.PNG)
 
 
 ## What it does NOT do (yet)
 * Auto-join EC2-hosted Consul clusters :C
     * See: https://github.com/hashicorp/go-discover/issues/61
-* Start the Consul proxy process to serve traffic to/from the service instance
+* Meaningfully proxy upstream traffic to/from the service instance
     * next task to tackle.
 * Use [Access Control Lists](https://www.consul.io/docs/security/acl) to authenticate traffic
 
 
 ## Other caveats
 * `amazonlinux` base image for `config-init` is very much overkill (slimmer linux image w/ `curl` and `bash` should work too)
+* Not loving that we need 4 containers. But the sidecars _are_ pretty light, so maybe it's not so bad?
