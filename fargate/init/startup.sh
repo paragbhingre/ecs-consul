@@ -12,7 +12,11 @@ echo '{
     "service": {
         "name": "counting",
         "port": 9001,
-        "connect": { "sidecar_service": {} }
+        "connect": { 
+            "sidecar_service": {
+                "port": 8080
+            } 
+        }
     }
 }' >> ${CONSUL_DIR}/service-counting.json
 
