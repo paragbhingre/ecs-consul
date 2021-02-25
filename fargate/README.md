@@ -17,13 +17,13 @@ On task launch:
     * registers `counter-service` with the mesh
 4. `consul-proxy` starts after `consul-agent` and registers itself as the sidecar for the _**counting**_ service.
 
-Consul nodes should appear as the names of the tasks they're running on:
+Consul nodes should appear as the "DockerName" of the init container (TODO: use task ID instead):
 
 ![node](../images/fargate_node_detail.PNG)
 
 
 ## What it does NOT do (yet)
-* Auto-join EC2-hosted Consul clusters :C
+* Auto-join for EC2-hosted Consul clusters _will_ work, but you need to specify a region.
     * See: https://github.com/hashicorp/go-discover/issues/61
 * Meaningfully proxy upstream traffic to/from the service instance
     * next task to tackle.
@@ -32,4 +32,4 @@ Consul nodes should appear as the names of the tasks they're running on:
 
 ## Other caveats
 * `amazonlinux` base image for `config-init` is very much overkill (slimmer linux image w/ `curl` and `bash` should work too)
-* Not loving that we need 4 containers. But the sidecars _are_ pretty light, so maybe it's not so bad?
+* Not loving that we need 4 containers. But the sidecars are pretty light, so maybe it's not so bad?
