@@ -22,11 +22,11 @@ Consul nodes should appear as the "DockerName" of the init container (TODO: use 
 ![node](../images/fargate_node_detail.PNG)
 
 
-## What it does NOT do (yet)
+## What it does NOT do (yet?)
+* Meaningfully proxy upstream traffic to/from the service instance - but [_this_ Fargate service](../mesh-templates/fargate-versions/greeter) does!
 * Auto-join for EC2-hosted Consul clusters _will_ work, but you need to specify a region.
     * See: https://github.com/hashicorp/go-discover/issues/61
-* Meaningfully proxy upstream traffic to/from the service instance
-    * next task to tackle.
+
 * Use [Access Control Lists](https://www.consul.io/docs/security/acl) to authenticate traffic
 
 
