@@ -133,7 +133,7 @@ Resources:
                 -v /opt/consul/data:/consul/data -v /opt/consul/config:/consul/config \
                 -v /var/run/docker.sock:/var/run/docker.sock \
                 -h $EC2_INSTANCE_ID --name consul-server -e CONSUL_ALLOW_PRIVILEGED_PORTS=1 \
-                -l service_name=consul-server consul:1.3.0 agent -server \
+                -l service_name=consul-server consul:1.9.3 agent -server \
                 -bootstrap-expect 1 -ui -config-file /consul/config/consul-server.json
             - !Sub |
               # Notify CloudFormation that the instance is up and ready
@@ -187,7 +187,7 @@ Resources:
           Name: consul-docker
       ContainerDefinitions:
         - Name: consul-agent
-          Image: docker.io/consul:1.3.0
+          Image: docker.io/consul:1.9.3
           EntryPoint:
             - '/bin/sh'
             - '-c'
