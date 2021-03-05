@@ -19,11 +19,11 @@ echo '{
                 "proxy": {
                     "upstreams": [
                         {
-                            "destination_name": "name",
+                            "destination_name": "name-fargate",
                             "local_bind_port": 3001
                         },
                         {
-                            "destination_name": "greeting",
+                            "destination_name": "greeting-fargate",
                             "local_bind_port": 3002
                         }
                     ]
