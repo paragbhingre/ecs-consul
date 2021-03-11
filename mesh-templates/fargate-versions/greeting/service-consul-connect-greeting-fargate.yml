@@ -17,7 +17,6 @@ Parameters:
                  will handle the traffic for this service
   InitImageUrl:
     Type: String
-    Default: 679273379347.dkr.ecr.us-west-1.amazonaws.com/greeting-init:latest # TODO: do not set
     Description: The custom build image which will create the config files
 
   ContainerPort:
@@ -38,7 +37,6 @@ Parameters:
     Description: How many copies of the service task to run
   Role:
     Type: String
-    Default: "ConsulMeshStack-ConsulAgentRole-GF07U0QPJV53" # TODO: get dynamically instead
     Description: (Optional) An IAM role to give the service's containers if the code within needs to
                  access other AWS resources like S3 buckets, DynamoDB tables, etc
 

@@ -17,7 +17,6 @@ Parameters:
                  will handle the traffic for this service
   InitImageUrl:
     Type: String
-    Default: 679273379347.dkr.ecr.us-west-1.amazonaws.com/name-init:latest # TODO: do not set
     Description: The custom build image which will create the config files
 
   ContainerPort:
@@ -34,11 +33,10 @@ Parameters:
     Description: How much memory in megabytes to give the container
   DesiredCount:
     Type: Number
-    Default: 1
+    Default: 2
     Description: How many copies of the service task to run
   Role:
     Type: String
-    Default: "ConsulMeshStack-ConsulAgentRole-GF07U0QPJV53" # TODO: get dynamically instead
     Description: (Optional) An IAM role to give the service's containers if the code within needs to
                  access other AWS resources like S3 buckets, DynamoDB tables, etc
 
@@ -49,6 +47,8 @@ Resources:
     Properties:
       LogGroupName: !Sub ${EnvironmentName}-service-${ServiceName}
 
+  # The task definition. This is a simple metadata description of what
+  # container to run, and what resource requirements it has.
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -57,9 +57,9 @@ Resources:
       Cpu: 512
       Memory: 1024
       ExecutionRoleArn: ecsTaskExecutionRole
-      TaskRoleArn: ConsulMeshStack-ConsulAgentRole-GF07U0QPJV53
       RequiresCompatibilities:
         - FARGATE
+      TaskRoleArn: !Sub ${Role}
       Volumes:
         - Name: consul-data
         - Name: consul-config
