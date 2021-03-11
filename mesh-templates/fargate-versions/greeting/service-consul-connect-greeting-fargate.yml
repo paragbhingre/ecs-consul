@@ -47,6 +47,8 @@ Resources:
     Properties:
       LogGroupName: !Sub ${EnvironmentName}-service-${ServiceName}
 
+  # The task definition. This is a simple metadata description of what
+  # container to run, and what resource requirements it has.
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -55,7 +57,7 @@ Resources:
       Cpu: 512
       Memory: 1024
       ExecutionRoleArn: ecsTaskExecutionRole
-      TaskRoleArn: ConsulMeshStack-ConsulAgentRole-GF07U0QPJV53
+      TaskRoleArn: !Sub ${Role}
       RequiresCompatibilities:
         - FARGATE
       Volumes:
@@ -64,7 +66,7 @@ Resources:
       ContainerDefinitions:
 
         # The actual service container. Should only accept inbound traffic from Consul 
-        # Connect and to other services via a localhost proxy pipe opened by the proxy
+        # Connect and to other services via a localhost Consul proxy pipe
         - Name: !Ref 'ServiceName'
           Cpu: !Ref 'ContainerCpu'
           Memory: !Ref 'ContainerMemory'

@@ -40,9 +40,6 @@ Parameters:
     Description: (Optional) An IAM role to give the service's containers if the code within needs to
                  access other AWS resources like S3 buckets, DynamoDB tables, etc
 
-Conditions:
-  HasCustomRole: !Not [ !Equals [!Ref 'Role', ''] ]
-
 Resources:
   # A log group for storing the stdout logs from this service's containers
   LogGroup:
@@ -62,19 +59,16 @@ Resources:
       Cpu: 512
       Memory: 1024
       ExecutionRoleArn: ecsTaskExecutionRole
+      TaskRoleArn: !Sub ${Role}
       RequiresCompatibilities:
         - FARGATE
-      TaskRoleArn:
-        Fn::If:
-          - 'HasCustomRole'
-          - !Ref 'Role'
-          - !Ref "AWS::NoValue"
       Volumes:
           - Name: consul-data
           - Name: consul-config
       ContainerDefinitions:
+
         # The actual service container. Should only accept inbound traffic from Consul 
-        # Connect and to other services via a localhost proxy pipe opened by the proxy
+        # Connect and to other services via a localhost Consul proxy pipe
         - Name: !Ref 'ServiceName'
           Cpu: !Ref 'ContainerCpu'
           Memory: !Ref 'ContainerMemory'
@@ -108,7 +102,7 @@ Resources:
             Options:
               awslogs-group: !Sub ${EnvironmentName}-service-${ServiceName}
               awslogs-region: !Ref 'AWS::Region'
-              awslogs-stream-prefix: 'init-test'
+              awslogs-stream-prefix: 'config-init'
 
         # the agent which should join the mesh & register the service
         - Name: consul-agent

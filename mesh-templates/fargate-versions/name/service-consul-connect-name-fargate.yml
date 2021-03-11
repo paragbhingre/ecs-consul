@@ -57,16 +57,16 @@ Resources:
       Cpu: 512
       Memory: 1024
       ExecutionRoleArn: ecsTaskExecutionRole
+      TaskRoleArn: !Sub ${Role}
       RequiresCompatibilities:
         - FARGATE
-      TaskRoleArn: !Sub ${Role}
       Volumes:
         - Name: consul-data
         - Name: consul-config
       ContainerDefinitions:
 
         # The actual service container. Should only accept inbound traffic from Consul 
-        # Connect and to other services via a localhost proxy pipe opened by the proxy
+        # Connect and to other services via a localhost Consul proxy pipe
         - Name: !Ref 'ServiceName'
           Cpu: !Ref 'ContainerCpu'
           Memory: !Ref 'ContainerMemory'
@@ -144,7 +144,7 @@ Resources:
             - '-c'
           Command:
             - !Sub >
-              exec consul connect proxy -sidecar-for name-fargate
+              exec consul connect proxy -sidecar-for ${ServiceName}
           PortMappings:
             - ContainerPort: 8080
           LogConfiguration:
