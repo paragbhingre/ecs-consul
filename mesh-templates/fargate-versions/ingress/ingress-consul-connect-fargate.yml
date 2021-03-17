@@ -284,6 +284,7 @@ Resources:
           AssignPublicIp: ENABLED
           SecurityGroups:
             - !Ref 'IngressSecurityGroup'
+            - Fn::ImportValue: !Sub ${EnvironmentName}:ServiceSecurityGroup
           Subnets:
             - Fn::ImportValue: !Sub ${EnvironmentName}:PublicSubnetOne
             - Fn::ImportValue: !Sub ${EnvironmentName}:PublicSubnetTwo
