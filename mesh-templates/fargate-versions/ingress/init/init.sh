@@ -14,9 +14,9 @@ echo "discovered task ARN is: " $TASK_ARN
 
 # extract AWS region and task ID from task ARN
 TASK_ID=$(echo $TASK_ARN | awk -F'/' '{gsub("\"","",$NF)};{print $NF}')
-AWS_REGION=$(echo $TASK_ARN | awk -F':' '{print $4}')
 
 # build unique node name for the Consul agent
+# NOTE: current $AWS_REGION available within FARGATE tasks
 node_UUID=$SERVICE_NAME-$AWS_REGION-$TASK_ID
 
 echo "writing service file..."

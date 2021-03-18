@@ -1,8 +1,8 @@
 #!/bin/sh
 
 SERVICE_NAME="greeting-fargate" # the service name as it will appear in Consul
-ENV_NAME="consulprod"       # the 'EnvironmentName' of the Consul service mesh to join
-CONSUL_DIR="/consul/config" # the directory where Consul expects to find conifg files
+ENV_NAME="consulprod"           # the 'EnvironmentName' of the Consul service mesh to join
+CONSUL_DIR="/consul/config"     # the directory where Consul expects to find conifg files
 
 # discover other required values from the Amazon ECS metadata endpoint
 ECS_IPV4=$(curl -s $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPv4Addresses[0]')
@@ -13,9 +13,9 @@ echo "discovered task ARN is: " $TASK_ARN
 
 # extract AWS region and task ID from task ARN
 TASK_ID=$(echo $TASK_ARN | awk -F'/' '{gsub("\"","",$NF)};{print $NF}')
-AWS_REGION=$(echo $TASK_ARN | awk -F':' '{print $4}')
 
 # build unique node name for the Consul agent
+# NOTE: current $AWS_REGION available within FARGATE tasks
 node_UUID=$SERVICE_NAME-$AWS_REGION-$TASK_ID
 
 echo "writing service file..."
