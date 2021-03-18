@@ -3,6 +3,7 @@
 SERVICE_NAME="greeter-ingress"  # the ECS service name
 ENV_NAME="consulprod"           # the 'EnvironmentName' of the Consul service mesh to join
 CONSUL_DIR="/consul/config"     # the directory where Consul expects to find conifg files
+UPSTREAM_1="greeter-fargate"    # the name of the upstream service as it's known to Consul
 
 # discover other required values from the Amazon ECS metadata endpoint
 ECS_IPV4=$(curl -s $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPv4Addresses[0]')
@@ -18,6 +19,25 @@ AWS_REGION=$(echo $TASK_ARN | awk -F':' '{print $4}')
 # build unique node name for the Consul agent
 node_UUID=$SERVICE_NAME-$AWS_REGION-$TASK_ID
 
+echo "writing service file..."
+echo '{
+    "service": {
+        "name": "'$SERVICE_NAME'",
+        "connect": { 
+            "sidecar_service": {
+                "proxy": {
+                    "upstreams": [
+                        {
+                            "destination_name": "'$UPSTREAM_1'",
+                            "local_bind_port": 3000
+                        }
+                    ]
+                }
+            } 
+        }
+    }
+}' >> ${CONSUL_DIR}/service-${SERVICE_NAME}.json
+
 # Currently need to specify a region for auto-join to work on Amazon ECS
 # See: https://github.com/hashicorp/go-discover/issues/61
 echo "writing config file..."
@@ -29,9 +49,11 @@ echo '{
     "advertise_addr":' $ECS_IPV4 '
 }' >> ${CONSUL_DIR}/config.json
 
-
 echo "contents of $CONSUL_DIR is:"
 ls ${CONSUL_DIR}
+
+echo "reading service file..."
+cat ${CONSUL_DIR}/service-${SERVICE_NAME}.json
 
 echo "reading config file..."
 cat ${CONSUL_DIR}/config.json

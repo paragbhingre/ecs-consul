@@ -253,7 +253,7 @@ Resources:
             - '-c'
           Command:
             - !Sub >
-              exec consul connect proxy -service ${ServiceName}-ingress -upstream ${ServiceName}:3000
+              exec consul connect proxy -sidecar-for ${ServiceName}-ingress
           Essential: true
           LogConfiguration:
             LogDriver: 'awslogs'
