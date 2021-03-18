@@ -43,7 +43,7 @@ echo '{
             } 
         }
     }
-}' >> ${CONSUL_DIR}/service-greeter-fargate.json
+}' >> ${CONSUL_DIR}/service-${SERVICE_NAME}.json
 
 # Currently need to specify a region for auto-join to work on Amazon ECS
 # See: https://github.com/hashicorp/go-discover/issues/61
