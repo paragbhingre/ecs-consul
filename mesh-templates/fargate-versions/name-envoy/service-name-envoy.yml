@@ -111,12 +111,39 @@ Resources:
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: 'consul-agent'
 
+        # bootstrap Envoy config
+        - Name: !Sub ${ServiceName}-bootstrap
+          Image: 'consul:1.9.3'
+          Essential: false
+          DependsOn:
+            - ContainerName: consul-agent
+              Condition: START
+          EntryPoint:
+            - '/bin/sh'
+            - '-c'
+          Command:
+            - !Sub >
+              exec consul connect envoy -sidecar-for ${ServiceName} -bootstrap >> /consul/config/${ServiceName}-bootstrap.json
+          MountPoints:
+              - ContainerPath: /consul/data
+                SourceVolume: consul-data
+                ReadOnly: false
+              - ContainerPath: /consul/config
+                SourceVolume: consul-config
+                ReadOnly: false
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Sub ${EnvironmentName}-service-${ServiceName}
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Sub ${ServiceName}-bootstrap
+        
         # the Consul Connect sidecar proxy
         - Name: !Sub ${ServiceName}-proxy
           Image: 'consul:1.9.3'
           DependsOn:
-            - ContainerName: consul-agent
-              Condition: START
+            - ContainerName: !Sub ${ServiceName}-bootstrap
+              Condition: COMPLETE
           EntryPoint:
             - '/bin/sh'
             - '-c'

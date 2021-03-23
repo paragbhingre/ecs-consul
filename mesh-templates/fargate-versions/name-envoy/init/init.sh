@@ -54,9 +54,3 @@ cat ${CONSUL_DIR}/config.json
 
 echo "starting Consul agent..."
 exec consul agent -ui -config-dir ${CONSUL_DIR}
-
-
-echo "generating envoy bootstrap config..."
-consul connect envoy -proxy-id ${SERVICE_NAME} -bootstrap >> ${CONSUL_DIR}/envoy/${SERVICE_NAME}-config.json
-
-cat ${CONSUL_DIR}/envoy/${SERVICE_NAME}-config.json
