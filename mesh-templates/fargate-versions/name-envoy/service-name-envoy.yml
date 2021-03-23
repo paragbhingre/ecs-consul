@@ -121,9 +121,9 @@ Resources:
           EntryPoint:
             - '/bin/sh'
             - '-c'
-          Command:
+          Command: 
             - !Sub >
-              exec consul connect envoy -sidecar-for ${ServiceName} -bootstrap >> /consul/config/${ServiceName}-bootstrap.json
+              exec consul connect envoy -sidecar-for ${ServiceName} -bootstrap -grpc-addr http://localhost:8502 > /consul/config/${ServiceName}-bootstrap.json
           MountPoints:
               - ContainerPath: /consul/data
                 SourceVolume: consul-data
@@ -140,7 +140,7 @@ Resources:
         
         # the Consul Connect sidecar proxy
         - Name: !Sub ${ServiceName}-proxy
-          Image: 'consul:1.9.3'
+          Image: 'public.ecr.aws/bitnami/envoy:1.16.2'
           DependsOn:
             - ContainerName: !Sub ${ServiceName}-bootstrap
               Condition: COMPLETE
@@ -149,7 +149,14 @@ Resources:
             - '-c'
           Command:
             - !Sub >
-              exec consul connect proxy -sidecar-for ${ServiceName}
+              envoy -c /consul/config/${ServiceName}-bootstrap.json
+          MountPoints:
+              - ContainerPath: /consul/data
+                SourceVolume: consul-data
+                ReadOnly: false
+              - ContainerPath: /consul/config
+                SourceVolume: consul-config
+                ReadOnly: false
           PortMappings:
             - ContainerPort: 8080
           LogConfiguration:
