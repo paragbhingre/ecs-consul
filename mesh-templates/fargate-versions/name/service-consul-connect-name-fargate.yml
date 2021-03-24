@@ -101,7 +101,7 @@ Resources:
           DependsOn:
             - ContainerName: config-init
               Condition: COMPLETE
-          Image: 'consul:1.9.3'
+          Image: 'public.ecr.aws/hashicorp/consul:1.9.1'
           EntryPoint:
             - '/bin/sh'
             - '-c'
@@ -135,7 +135,7 @@ Resources:
 
         # the Consul Connect sidecar proxy
         - Name: !Sub ${ServiceName}-proxy
-          Image: 'consul:1.9.3'
+          Image: 'public.ecr.aws/hashicorp/consul:1.9.1'
           DependsOn:
             - ContainerName: consul-agent
               Condition: START
