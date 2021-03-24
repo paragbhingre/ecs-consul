@@ -208,7 +208,7 @@ Resources:
           DependsOn:
             - ContainerName: config-init
               Condition: COMPLETE
-          Image: 'consul:1.9.3'
+          Image: 'public.ecr.aws/hashicorp/consul:1.9.1'
           EntryPoint:
             - '/bin/sh'
             - '-c'
@@ -244,7 +244,7 @@ Resources:
         # access to the referenced service on a specific port, this port can then be
         # exposed to world via a load balancer
         - Name: !Sub ${ServiceName}-ingress
-          Image: 'consul:1.9.3'
+          Image: 'public.ecr.aws/hashicorp/consul:1.9.1'
           DependsOn:
             - ContainerName: consul-agent
               Condition: START
