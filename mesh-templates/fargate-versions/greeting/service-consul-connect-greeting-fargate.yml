@@ -81,33 +81,10 @@ Resources:
               awslogs-group: !Sub ${EnvironmentName}-service-${ServiceName}
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: !Ref 'ServiceName'
-        
-        # the init container which populates the config files
-        - Name: config-init
-          Image: !Ref 'InitImageUrl'
-          Essential: false
-          MountPoints:
-            - SourceVolume: consul-config
-              ContainerPath: /consul/config
-          LogConfiguration:
-            LogDriver: 'awslogs'
-            Options:
-              awslogs-group: !Sub ${EnvironmentName}-service-${ServiceName}
-              awslogs-region: !Ref 'AWS::Region'
-              awslogs-stream-prefix: 'config-init'
 
         # the agent which should join the mesh & register the service
-        - Name: consul-agent
-          DependsOn:
-            - ContainerName: config-init
-              Condition: COMPLETE
-          Image: 'public.ecr.aws/hashicorp/consul:1.9.1'
-          EntryPoint:
-            - '/bin/sh'
-            - '-c'
-          Command:
-            - !Sub >
-                exec consul agent -ui -config-dir /consul/config
+        - Name: greeting-agent
+          Image: !Ref 'InitImageUrl'
           PortMappings:
             - ContainerPort: 8301
               Protocol: tcp
@@ -131,13 +108,13 @@ Resources:
             Options:
               awslogs-group: !Sub ${EnvironmentName}-service-${ServiceName}
               awslogs-region: !Ref 'AWS::Region'
-              awslogs-stream-prefix: 'consul-agent'
+              awslogs-stream-prefix: 'greeting-agent'
 
         # the Consul Connect sidecar proxy
         - Name: !Sub ${ServiceName}-proxy
           Image: 'public.ecr.aws/hashicorp/consul:1.9.1'
           DependsOn:
-            - ContainerName: consul-agent
+            - ContainerName: greeting-agent
               Condition: START
           EntryPoint:
             - '/bin/sh'
