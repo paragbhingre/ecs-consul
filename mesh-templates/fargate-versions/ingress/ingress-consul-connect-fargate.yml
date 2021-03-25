@@ -188,33 +188,10 @@ Resources:
               awslogs-group: !Sub ${EnvironmentName}-ingress-${ServiceName}
               awslogs-region: !Ref 'AWS::Region'
               awslogs-stream-prefix: nginx
-        
-        # the init container which populates the config files
-        - Name: config-init
-          Image: !Ref 'InitImageUrl'
-          Essential: false
-          MountPoints:
-            - SourceVolume: consul-config
-              ContainerPath: /consul/config
-          LogConfiguration:
-            LogDriver: 'awslogs'
-            Options:
-              awslogs-group: !Sub ${EnvironmentName}-ingress-${ServiceName}
-              awslogs-region: !Ref 'AWS::Region'
-              awslogs-stream-prefix: 'config-init'
 
         # the agent which should join the mesh & register the service
-        - Name: consul-agent
-          DependsOn:
-            - ContainerName: config-init
-              Condition: COMPLETE
-          Image: 'public.ecr.aws/hashicorp/consul:1.9.1'
-          EntryPoint:
-            - '/bin/sh'
-            - '-c'
-          Command:
-            - !Sub >
-                exec consul agent -ui -config-dir /consul/config
+        - Name: ingress-agent
+          Image: !Ref 'InitImageUrl'
           PortMappings:
             - ContainerPort: 8301
               Protocol: tcp
@@ -238,7 +215,7 @@ Resources:
             Options:
               awslogs-group: !Sub ${EnvironmentName}-ingress-${ServiceName}
               awslogs-region: !Ref 'AWS::Region'
-              awslogs-stream-prefix: 'consul-agent'
+              awslogs-stream-prefix: 'ingress-agent'
         
         # This is a Consul Connect sidecar. It is configured to just provide proxy
         # access to the referenced service on a specific port, this port can then be
@@ -246,7 +223,7 @@ Resources:
         - Name: !Sub ${ServiceName}-ingress
           Image: 'public.ecr.aws/hashicorp/consul:1.9.1'
           DependsOn:
-            - ContainerName: consul-agent
+            - ContainerName: ingress-agent
               Condition: START
           EntryPoint:
             - '/bin/sh'
