@@ -65,3 +65,6 @@ cat ${CONSUL_DIR}/service-${SERVICE_NAME}.json
 
 echo "reading config file..."
 cat ${CONSUL_DIR}/config.json
+
+echo "starting Consul agent..."
+exec consul agent -ui -config-dir ${CONSUL_DIR}
