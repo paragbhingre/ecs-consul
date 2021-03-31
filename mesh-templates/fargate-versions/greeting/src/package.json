@@ -1,5 +1,5 @@
 {
-  "name": "name",
+  "name": "greeting",
   "version": "1.0.0",
   "description": "Simple microservice that returns a random greeting",
   "main": "index.js",
