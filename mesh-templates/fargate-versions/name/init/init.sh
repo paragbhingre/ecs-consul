@@ -1,6 +1,6 @@
 #!/bin/sh
 
-SERVICE_NAME="name-fargate" # the service name as it will appear in Consul
+SERVICE_NAME="name"         # the service name as it will appear in Consul
 ENV_NAME="consulprod"       # the 'EnvironmentName' of the Consul service mesh to join
 CONSUL_DIR="/consul/config" # the directory where Consul expects to find conifg files
 

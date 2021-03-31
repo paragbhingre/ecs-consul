@@ -1,10 +1,10 @@
 #!/bin/sh
 
-SERVICE_NAME="greeter-fargate"  # the service name as it will appear in Consul
+SERVICE_NAME="greeter"  # the service name as it will appear in Consul
 ENV_NAME="consulprod"           # the 'EnvironmentName' of the Consul service mesh to join
 CONSUL_DIR="/consul/config"     # the directory where Consul expects to find conifg files
-UPSTREAM_1="name-fargate"       # the name of the upstream service as it's known to Consul
-UPSTREAM_2="greeting-fargate"   # the name of the upstream service as it's known to Consul
+UPSTREAM_1="name"       # the name of the upstream service as it's known to Consul
+UPSTREAM_2="greeting"   # the name of the upstream service as it's known to Consul
 
 # discover other required values from the Amazon ECS metadata endpoint
 ECS_IPV4=$(curl -s $ECS_CONTAINER_METADATA_URI | jq '.Networks[0].IPv4Addresses[0]')
