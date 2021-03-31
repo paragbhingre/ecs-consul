@@ -5,7 +5,7 @@ Description: Deploy a ingress which exposes an internal Consul Connect service t
 Parameters:
   EnvironmentName:
     Type: String
-    Default: consulprod
+    Default: test
     Description: The name of the environment to add this ingress to
   ServiceName:
     Type: String

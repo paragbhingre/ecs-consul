@@ -1,7 +1,7 @@
 #!/bin/sh
 
 SERVICE_NAME="greeter-ingress"  # the ECS service name
-ENV_NAME="consulprod"           # the 'EnvironmentName' of the Consul service mesh to join
+ENV_NAME="test"           # the 'EnvironmentName' of the Consul service mesh to join
 CONSUL_DIR="/consul/config"     # the directory where Consul expects to find conifg files
 UPSTREAM_1="greeter-fargate"    # the name of the upstream service as it's known to Consul
 

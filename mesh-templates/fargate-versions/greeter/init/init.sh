@@ -1,7 +1,7 @@
 #!/bin/sh
 
 SERVICE_NAME="greeter"  # the service name as it will appear in Consul
-ENV_NAME="consulprod"           # the 'EnvironmentName' of the Consul service mesh to join
+ENV_NAME="test"           # the 'EnvironmentName' of the Consul service mesh to join
 CONSUL_DIR="/consul/config"     # the directory where Consul expects to find conifg files
 UPSTREAM_1="name"       # the name of the upstream service as it's known to Consul
 UPSTREAM_2="greeting"   # the name of the upstream service as it's known to Consul

@@ -4,7 +4,7 @@ Description: Deploy an ECS service with a Consul Connect sidecar
 Parameters:
   EnvironmentName:
     Type: String
-    Default: consulprod
+    Default: test
     Description: The name of the environment to add this service to
   ServiceName:
     Type: String

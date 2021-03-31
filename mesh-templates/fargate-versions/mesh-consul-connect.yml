@@ -3,7 +3,7 @@ Description: Resources to setup Consul Connect for routing cluster traffic
 Parameters:
   EnvironmentName:
     Type: String
-    Default: consulprod
+    Default: test
     Description: The name of the environment to add this Linkerd stack to
   ECSAMI:
     Description: AMI ID
