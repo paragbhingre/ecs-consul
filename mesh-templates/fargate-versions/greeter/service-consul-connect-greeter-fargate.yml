@@ -47,6 +47,42 @@ Resources:
     Properties:
       LogGroupName: !Sub ${EnvironmentName}-service-${ServiceName}
 
+  # Consul agent role. This role authorizes the Consul daemon to query the list of EC2 instances
+  # by tag in order to locate the Consul server.
+  ConsulAgentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: "ecs-tasks.amazonaws.com"
+          Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+      - PolicyName: query-ec2-instances
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+              - 'ec2:DescribeInstances'
+            Resource: '*'
+
+  # Task execution role. This role authorizes the ECS agent to pull images from ECR 
+  # and post to CloudWatch logs.
+  TaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: "ecs-tasks.amazonaws.com"
+          Action: ['sts:AssumeRole']
+      Path: /
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
   # The task definition. This is a simple metadata description of what
   # container to run, and what resource requirements it has.
   TaskDefinition:
@@ -58,8 +94,8 @@ Resources:
       NetworkMode: awsvpc
       Cpu: 512
       Memory: 1024
-      ExecutionRoleArn: ecsTaskExecutionRole
-      TaskRoleArn: !Sub ${Role}
+      ExecutionRoleArn: !GetAtt 'TaskExecutionRole.Arn'
+      TaskRoleArn: !GetAtt 'ConsulAgentRole.Arn'
       RequiresCompatibilities:
         - FARGATE
       Volumes:
