@@ -117,7 +117,7 @@ aws cloudformation deploy --template-file .\name\service-consul-connect-name-far
 aws cloudformation deploy --template-file .\greeter\service-consul-connect-greeter-fargate.yml --stack-name ConsulGreeterService --parameter-overrides ImageUrl=$ECR_URI/greeter InitImageUrl=$ECR_URI/greeter-init --region $AWS_REGION
 ```
 
-After the services are done deploying you should be able to see them in your Consul UI:
+After the services are done deploying you should be able to see them in your Consul UI at `http://localhost:8500/ui/dc1/services`:
 
 [IMAGE TBD]
 
