@@ -31,5 +31,6 @@ Consul nodes should appear as the "DockerName" of the init container (TODO: use 
 
 
 ## Other caveats
-* `amazonlinux` base image for `config-init` is very much overkill (slimmer linux image w/ `curl` and `bash` should work too)
+* `amazonlinux` base image for `config-init` is very much overkill. Slimmer linux env with the following should also work:
+    * awk, curl, echo, jq
 * Not loving that we need 4 containers. But the sidecars are pretty light, so maybe it's not so bad?

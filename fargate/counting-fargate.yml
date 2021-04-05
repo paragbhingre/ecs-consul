@@ -38,110 +38,110 @@ Resources:
       LogGroupName: !Sub ${EnvironmentName}-init-test
 
   TaskDefinition:
-      Type: AWS::ECS::TaskDefinition
-      Properties:
-        Family: !Ref 'ServiceName'
-        NetworkMode: awsvpc
-        Cpu: 512
-        Memory: 1024
-        ExecutionRoleArn: ecsTaskExecutionRole
-        TaskRoleArn: ConsulMeshStack-ConsulAgentRole-GF07U0QPJV53
-        RequiresCompatibilities:
-          - FARGATE
-        Volumes:
-          - Name: consul-data
-          - Name: consul-config
-        ContainerDefinitions:
-          
-          # the init container which populates the config files
-          - Name: config-init
-            Image: !Ref 'InitImageUrl'
-            Essential: false
-            MountPoints:
-              - SourceVolume: consul-config
-                ContainerPath: /consul/config
-            LogConfiguration:
-              LogDriver: 'awslogs'
-              Options:
-                awslogs-group: !Sub ${EnvironmentName}-init-test
-                awslogs-region: !Ref 'AWS::Region'
-                awslogs-stream-prefix: 'init-test'
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Ref 'ServiceName'
+      NetworkMode: awsvpc
+      Cpu: 512
+      Memory: 1024
+      ExecutionRoleArn: ecsTaskExecutionRole
+      TaskRoleArn: ConsulMeshStack-ConsulAgentRole-GF07U0QPJV53
+      RequiresCompatibilities:
+        - FARGATE
+      Volumes:
+        - Name: consul-data
+        - Name: consul-config
+      ContainerDefinitions:
+        
+        # the init container which populates the config files
+        - Name: config-init
+          Image: !Ref 'InitImageUrl'
+          Essential: false
+          MountPoints:
+            - SourceVolume: consul-config
+              ContainerPath: /consul/config
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Sub ${EnvironmentName}-init-test
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: 'init-test'
 
-          # the service that will count (no real purpose yet)
-          - Name: counter-service
-            Image: !Ref 'ImageUrl'
-            PortMappings:
-              - ContainerPort: 9001
-            LogConfiguration:
-              LogDriver: 'awslogs'
-              Options:
-                awslogs-group: !Sub ${EnvironmentName}-init-test
-                awslogs-region: !Ref 'AWS::Region'
-                awslogs-stream-prefix: 'counting-service'
+        # the service that will count (no real purpose yet)
+        - Name: counter-service
+          Image: !Ref 'ImageUrl'
+          PortMappings:
+            - ContainerPort: 9001
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Sub ${EnvironmentName}-init-test
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: 'counting-service'
 
-          # the agent which should join the mesh & register the service
-          - Name: consul-agent
-            DependsOn:
-              - ContainerName: config-init
-                Condition: COMPLETE
-            Image: 'consul:1.9.3'
-            EntryPoint:
-              - '/bin/sh'
-              - '-c'
-            Command:
-              - !Sub >
-                  exec consul agent -ui -config-dir /consul/config
-            PortMappings:
-              - ContainerPort: 8301
-                Protocol: tcp
-              - ContainerPort: 8301
-                Protocol: udp
-              - ContainerPort: 8400
-                Protocol: tcp
-              - ContainerPort: 8500
-                Protocol: tcp
-              - ContainerPort: 53
-                Protocol: udp
-            #Essential: true
-            #Environment:
-              # A few extra config values for the Consul agent, this enables the
-              # Consul Connect features.
-              #- Name: CONSUL_LOCAL_CONFIG
-                #Value: '{"connect":{"enabled":true}}'
-            MountPoints:
-              - ContainerPath: /consul/data
-                SourceVolume: consul-data
-                ReadOnly: false
-              - ContainerPath: /consul/config
-                SourceVolume: consul-config
-                ReadOnly: false
-            LogConfiguration:
-              LogDriver: 'awslogs'
-              Options:
-                awslogs-group: !Sub ${EnvironmentName}-init-test
-                awslogs-region: !Ref 'AWS::Region'
-                awslogs-stream-prefix: 'consul-agent'
+        # the agent which should join the mesh & register the service
+        - Name: consul-agent
+          DependsOn:
+            - ContainerName: config-init
+              Condition: COMPLETE
+          Image: 'consul:1.9.3'
+          EntryPoint:
+            - '/bin/sh'
+            - '-c'
+          Command:
+            - !Sub >
+                exec consul agent -ui -config-dir /consul/config
+          PortMappings:
+            - ContainerPort: 8301
+              Protocol: tcp
+            - ContainerPort: 8301
+              Protocol: udp
+            - ContainerPort: 8400
+              Protocol: tcp
+            - ContainerPort: 8500
+              Protocol: tcp
+            - ContainerPort: 53
+              Protocol: udp
+          #Essential: true
+          #Environment:
+            # A few extra config values for the Consul agent, this enables the
+            # Consul Connect features.
+            #- Name: CONSUL_LOCAL_CONFIG
+              #Value: '{"connect":{"enabled":true}}'
+          MountPoints:
+            - ContainerPath: /consul/data
+              SourceVolume: consul-data
+              ReadOnly: false
+            - ContainerPath: /consul/config
+              SourceVolume: consul-config
+              ReadOnly: false
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Sub ${EnvironmentName}-init-test
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: 'consul-agent'
 
-          # the Consul Connect sidecar proxy
-          - Name: consul-proxy
-            Image: 'consul:1.9.3'
-            EntryPoint:
-              - '/bin/sh'
-              - '-c'
-            DependsOn:
-              - ContainerName: consul-agent
-                Condition: START
-            Command:
-              - !Sub >
-                  exec consul connect proxy -sidecar-for counting
-            PortMappings:
-              - ContainerPort: 8080
-            LogConfiguration:
-              LogDriver: 'awslogs'
-              Options:
-                awslogs-group: !Sub ${EnvironmentName}-init-test
-                awslogs-region: !Ref 'AWS::Region'
-                awslogs-stream-prefix: 'consul-proxy'
+        # the Consul Connect sidecar proxy
+        - Name: consul-proxy
+          Image: 'consul:1.9.3'
+          EntryPoint:
+            - '/bin/sh'
+            - '-c'
+          DependsOn:
+            - ContainerName: consul-agent
+              Condition: START
+          Command:
+            - !Sub >
+                exec consul connect proxy -sidecar-for counting
+          PortMappings:
+            - ContainerPort: 8080
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Sub ${EnvironmentName}-init-test
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: 'consul-proxy'
 
   # The ECS service to run the containers
   Service:
