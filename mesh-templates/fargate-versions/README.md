@@ -16,15 +16,15 @@ In this walkthrough we'll configure several ECS container services running on AW
 First we're going to create a VPC and an Amazon ECS cluster for our mesh and services to reside in. 
 * NOTE: Make sure to select a valid key pair so you can SSH into the server instance and view the Consul UI later.
 ```
-aws cloudformation deploy --template-file .\cluster-ec2-consul-connect.yml
---stack-name ConsulEcsCluster --parameter-overrides KeyName=$MY_SSH_KEY --capabilities CAPABILITY_IAM --region $AWS_REGION
+aws cloudformation deploy --template-file .\cluster-ec2-consul-connect.yml --stack-name ConsulEcsCluster --region $AWS_REGION
 ```
 
 ## Deploy the Consul Connect server
 
 Now we're going to deploy a Consul connect server that our ECS/Fargate services can join. In production, you would want to have an odd number of redundant server instances running in order to provide more robust and resilient consensus, but one server will work for this simple example.
+* NOTE: Make sure to select a valid key pair so you can SSH into the server instance and view the Consul UI.
 ```
-aws cloudformation deploy --template-file .\mesh-consul-connect.yml --stack-name ConsulMeshStack --parameter-overrides KeyName=$MY_SSH_KEY --capabilities CAPABILITY_IAM --region $AWS_REGION
+aws cloudformation deploy --template-file .\mesh-consul-connect.yml --stack-name ConsulMeshStack --parameter-overrides KeyName=$MY_SSH_KEY --region $AWS_REGION
 ```
 
 At this point you should be able to SSH into your Consul server instance and access the Consul UI. The SSH command will be in the stack output and looks something like:
@@ -41,7 +41,7 @@ Navigte to `localhost:8500` in your browser and view the services and nodes in t
 
 Now we're ready to launch some ECS services into the cluster! But first let's look at the makeup of the services we're about to create:
 
-[IMAGE OF TASK TBD]
+[IMAGE OF TASK TBD] `<--- make this`
 
 Each task will be composed of 3 containers:
 
@@ -69,7 +69,9 @@ aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --
 ```
 
 Push the service images to ECR
-```
+
+> bash cmds
+```bash
 # save ECR registry URI to an environment variable so we can reuse it
 ECR_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
@@ -86,19 +88,53 @@ docker tag greeter:latest $ECR_URI/greeter:latest
 docker push $ECR_URI/greeter:latest
 ```
 
-Now build and push the Consul agent containers for each service the same way.
+> powershell cmds
+```powershell
+$env:ECR_URI = '$env:AWS_ACCOUNT_ID.dkr.ecr.$env:AWS_REGION.amazonaws.com'
+
+# tag and push the greeting service image
+docker tag greeting:latest $env:ECR_URI/greeting:latest
+docker push $env:ECR_URI/greeting:latest
+
+# tag and push the name service image
+docker tag name:latest $env:ECR_URI/name:latest
+docker push $env:ECR_URI/name:latest
+
+# tag and push the greeter service image
+docker tag greeter:latest $env:ECR_URI/greeter:latest
+docker push $env:ECR_URI/greeter:latest
 ```
-docker build -f greeting/init/Dockerfile -t greeting-init greeting/init
-docker tag greeting-init:latest $ECR_URI/greeting-init:latest
-docker push $ECR_URI/greeting-init:latest
 
-docker build -f name/init/Dockerfile -t name-init name/init
-docker tag name-init:latest $ECR_URI/name-init:latest
-docker push $ECR_URI/name-init:latest
+Now build and push the Consul agent containers for each service the same way.
 
-docker build -f greeter/init/Dockerfile -t greeter-init greeter/init
-docker tag greeter-init:latest $ECR_URI/greeter-init:latest
-docker push $ECR_URI/greeter-init:latest
+> bash commands
+```bash
+docker build -f greeting/agent/Dockerfile -t greeting-agent greeting/agent
+docker tag greeting-agent:latest $ECR_URI/greeting-agent:latest
+docker push $ECR_URI/greeting-agent:latest
+
+docker build -f name/agent/Dockerfile -t name-agent name/agent
+docker tag name-agent:latest $ECR_URI/name-agent:latest
+docker push $ECR_URI/name-agent:latest
+
+docker build -f greeter/agent/Dockerfile -t greeter-agent greeter/agent
+docker tag greeter-agent:latest $ECR_URI/greeter-agent:latest
+docker push $ECR_URI/greeter-agent:latest
+```
+
+> powershell commands
+```powershell
+docker build -f greeting/agent/Dockerfile -t greeting-agent greeting/agent
+docker tag greeting-agent:latest $env:ECR_URI/greeting-agent:latest
+docker push $env:ECR_URI/greeting-agent:latest
+
+docker build -f name/agent/Dockerfile -t name-agent name/agent
+docker tag name-agent:latest $env:ECR_URI/name-agent:latest
+docker push $env:ECR_URI/name-agent:latest
+
+docker build -f greeter/agent/Dockerfile -t greeter-agent greeter/agent
+docker tag greeter-agent:latest $env:ECR_URI/greeter-agent:latest
+docker push $env:ECR_URI/greeter-agent:latest
 ```
 
 ### Create the Amazon ECS services
@@ -107,19 +143,35 @@ We can now use AWS CloudFormation to create the 3 Amazon ECS services
 
 ```
 # deploy the "greeting" service
-aws cloudformation deploy --template-file .\greeting\service-consul-connect-greeting-fargate.yml --stack-name ConsulGreetingService --parameter-overrides ImageUrl=$ECR_URI/greeting InitImageUrl=$ECR_URI/greeting-init --region $AWS_REGION
+aws cloudformation deploy --template-file .\greeting\service-consul-connect-greeting-fargate.yml --stack-name ConsulGreetingService --parameter-overrides ImageUrl=$ECR_URI/greeting InitImageUrl=$ECR_URI/greeting-agent --capabilities CAPABILITY_IAM --region $AWS_REGION
 
 # deploy the "name" service
-aws cloudformation deploy --template-file .\name\service-consul-connect-name-fargate.yml --stack-name ConsulNameService --parameter-overrides ImageUrl=$ECR_URI/name InitImageUrl=$ECR_URI/name-init --region $AWS_REGION
+aws cloudformation deploy --template-file .\name\service-consul-connect-name-fargate.yml --stack-name ConsulNameService --parameter-overrides ImageUrl=$ECR_URI/name InitImageUrl=$ECR_URI/name-agent --capabilities CAPABILITY_IAM --region $AWS_REGION
 
 
 # deploy the "greeter" service
-aws cloudformation deploy --template-file .\greeter\service-consul-connect-greeter-fargate.yml --stack-name ConsulGreeterService --parameter-overrides ImageUrl=$ECR_URI/greeter InitImageUrl=$ECR_URI/greeter-init --region $AWS_REGION
+aws cloudformation deploy --template-file .\greeter\service-consul-connect-greeter-fargate.yml --stack-name ConsulGreeterService --parameter-overrides ImageUrl=$ECR_URI/greeter InitImageUrl=$ECR_URI/greeter-agent --capabilities CAPABILITY_IAM --region $AWS_REGION
 ```
 
 After the services are done deploying you should be able to see them in your Consul UI at `http://localhost:8500/ui/dc1/services`:
 
 [IMAGE TBD]
+
+Now let's test the connectivity between the services by hitting the `greeter` endpoint:
+```bash
+# install the Consul binary
+sudo yum install -y wget unzip
+wget https://releases.hashicorp.com/consul/1.9.1/consul_1.9.1_linux_amd64.zip
+unzip consul_1.9.1_linux_amd64.zip
+
+# start the test proxy
+./consul connect proxy -service test -upstream greeter:8080 &
+
+# curl the greeter endpoint
+curl localhost:8080
+
+From ip-10-0-1-64.eu-west-1.compute.internal: Greetings (ip-10-0-0-244.eu-west-1.compute.internal) Jennifer (ip-10-0-1-44.eu-west-1.compute.internal)
+```
 
 ## Deploy the Ingress service + Load Balancer
 
@@ -144,3 +196,8 @@ curl http://consu-publi-aaauv3we8kbg-87191928.ca-central-1.elb.amazonaws.com/
 # response
 From ip-10-0-0-87.ca-central-1.compute.internal: Hello (ip-10-0-0-176.ca-central-1.compute.internal) Barbara (ip-10-0-1-203.ca-central-1.compute.internal)
 ```
+
+
+## Cleanup
+
+Delete the stacks

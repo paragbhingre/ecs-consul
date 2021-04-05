@@ -38,7 +38,7 @@ Resources:
       IpProtocol: tcp
       CidrIpv6: '::/0'
 
-  EcsSecurityGroupIngressFromCluster:
+  EcsSecurityGroupIngressFromCluster: # remove?
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       Description: Allow incoming connections from one container host to another
@@ -51,13 +51,12 @@ Resources:
   EcsSecurityGroupIngressFromConsulConnect:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: Allow incoming connections to the consul agent on the host from the consul connect
-                   in the awsvpc networked task
+      Description: Allow incoming connections from the consul agents in the awsvpc networked tasks
       GroupId:
         Fn::ImportValue: !Sub ${EnvironmentName}:ContainerSecurityGroup
-      FromPort: 8500
-      ToPort: 8500
-      IpProtocol: tcp
+      #FromPort: 8500
+      #ToPort: 8500
+      IpProtocol: -1
       SourceSecurityGroupId: !Ref ServiceSecurityGroup
 
   # A service level security group. This should be used for each service we deploy
